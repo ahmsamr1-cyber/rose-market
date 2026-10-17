@@ -5,19 +5,24 @@ workflows:
     max_build_duration: 30
     environment:
       flutter: stable
-      xcode: latest
-      cocoapods: default
     scripts:
-      - name: Get Flutter packages
+      - name: Fix project structure
         script: |
-          flutter clean
+          # انشاء مجلد android الناقص
+          flutter create . --platforms=android --project-name rose_market --org com.rosemarket.app --no-pub
+          # تعديل ndkVersion
+          echo 'android { ndkVersion = "27.0.12077973" }' > android/app/build_temp.gradle || true
+          # اضافة ndkVersion للملف الاساسي
+          if grep -q "ndkVersion" android/app/build.gradle; then
+            echo "ndk exists"
+          else
+            sed -i '' 's/android {/android { \n    ndkVersion = "27.0.12077973"/' android/app/build.gradle || sed -i 's/android {/android {\n    ndkVersion = "27.0.12077973"/' android/app/build.gradle
+          fi
+      - name: Get packages
+        script: |
           flutter pub get
       - name: Build APK
         script: |
           flutter build apk --release
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
-    publishing:
-      email:
-        recipients:
-          - your-email@gmail.com
